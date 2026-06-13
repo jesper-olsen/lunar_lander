@@ -1,9 +1,9 @@
-use std::io::{self, Write};
 use lunar_lander::Lander;
+use lunar_lander::MAX_THRUST;
 use lunar_lander::Outcome;
 use lunar_lander::ask_yes_no;
 use lunar_lander::get_int;
-use lunar_lander::MAX_THRUST;
+use std::io::{self, Write};
 
 fn instructions() {
     println!("\nYOU ARE LANDING ON THE MOON AND HAVE TAKEN OVER MANUAL");

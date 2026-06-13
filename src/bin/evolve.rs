@@ -1,7 +1,6 @@
+use lunar_lander::{Lander, MAX_THRUST, Outcome};
 use rand::RngExt;
 use std::ops::RangeInclusive;
-use lunar_lander::{Outcome, Lander, MAX_THRUST};
-
 
 // --- AUTOMATED SIMULATIONS ---
 
@@ -33,7 +32,7 @@ fn simulate_genome(genome: &[u8]) -> TrajectoryResult {
         path.push((actual_burn, lander.altitude));
         time += 1;
     }
-    
+
     let final_speed = lander.impact_velocity.expect("No impact velocity");
     let outcome = lander.get_outcome().unwrap();
 
@@ -41,7 +40,7 @@ fn simulate_genome(genome: &[u8]) -> TrajectoryResult {
         path,
         outcome,
         final_speed,
-        fuel_remaining: lander.fuel, 
+        fuel_remaining: lander.fuel,
     }
 }
 
@@ -50,16 +49,16 @@ fn calculate_fitness(result: &TrajectoryResult) -> f64 {
     match result.outcome {
         // Massive reward for perfection, plus points for leftover fuel
         Outcome::Perfect => 10000.0 + result.fuel_remaining,
-        
+
         // Base points for surviving, but penalized for how close to 2.0 ft/s it was
         Outcome::Hard => 5000.0 - result.final_speed,
-        
+
         // Crashes are penalized heavily based on the impact speed.
         // A softer crash scores higher than a meteor strike.
         Outcome::Crashed => {
             let penalty = result.final_speed.abs();
             // Using max to prevent negative fitness scores
-            1000.0 - penalty.min(1000.0) 
+            1000.0 - penalty.min(1000.0)
         }
     }
 }
@@ -70,7 +69,11 @@ fn run_evolution() {
 
     // 1. Initialize random population
     let mut population: Vec<Vec<u8>> = (0..POPULATION_SIZE)
-        .map(|_| (0..SEQUENCE_LENGTH).map(|_| rng.random_range(0..=MAX_THRUST)).collect())
+        .map(|_| {
+            (0..SEQUENCE_LENGTH)
+                .map(|_| rng.random_range(0..=MAX_THRUST))
+                .collect()
+        })
         .collect();
 
     for generation in 1..=GENERATIONS {
@@ -93,7 +96,7 @@ fn run_evolution() {
 
         if generation % 5 == 0 || generation == 1 {
             println!(
-                "Gen {:02} | Best Fitness: {:.1} | Impact Speed: {:.2} ft/s | {:?}", 
+                "Gen {:02} | Best Fitness: {:.1} | Impact Speed: {:.2} ft/s | {:?}",
                 generation, best_fitness, best_speed, best_outcome
             );
         }
@@ -137,12 +140,13 @@ fn run_evolution() {
 fn print_winning_trajectory(result: &TrajectoryResult) {
     println!("Final Speed: {:.2} ft/s", result.final_speed);
     println!("Fuel Remaining: {:.1}", result.fuel_remaining);
-    
-    let formatted_path: Vec<String> = result.path
+
+    let formatted_path: Vec<String> = result
+        .path
         .iter()
         .map(|(burn, alt)| format!("(Burn: {burn}, Alt: {alt:.0}ft)"))
         .collect();
-        
+
     println!("Flight Path:\n  {}\n", formatted_path.join(" -> "));
 }
 
@@ -156,4 +160,3 @@ fn main() {
     //}
     run_evolution();
 }
-
