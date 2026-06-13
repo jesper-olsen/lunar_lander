@@ -1,12 +1,11 @@
 use lunar_lander::{Lander, MAX_THRUST, Outcome};
 use rand::RngExt;
-use std::ops::RangeInclusive;
 
 // --- AUTOMATED SIMULATIONS ---
 
 struct TrajectoryResult {
-    /// Stores tuples of (Burn Rate Applied, Resulting Altitude)
-    path: Vec<(u8, f64)>,
+    /// Stores the exact sequence of burns applied during the flight
+    path: Vec<u8>,
     outcome: Outcome,
     final_speed: f64,
     fuel_remaining: f64,
@@ -23,13 +22,14 @@ fn simulate_genome(genome: &[u8]) -> TrajectoryResult {
     let mut time = 0;
 
     while !lander.is_landed() {
-        // If the genome runs out before we land, the engines shut off (burn 0)
         let intended_burn = *genome.get(time).unwrap_or(&0);
         let max_burn = MAX_THRUST.min(lander.fuel as u8);
         let actual_burn = intended_burn.min(max_burn);
 
+        // We only store the action we actually took
+        path.push(actual_burn);
+
         lander.step(actual_burn);
-        path.push((actual_burn, lander.altitude));
         time += 1;
     }
 
@@ -96,8 +96,7 @@ fn run_evolution() {
 
         if generation % 5 == 0 || generation == 1 {
             println!(
-                "Gen {:02} | Best Fitness: {:.1} | Impact Speed: {:.2} ft/s | {:?}",
-                generation, best_fitness, best_speed, best_outcome
+                "Gen {generation:02} | Best Fitness: {best_fitness:.1} | Impact Speed: {best_speed:.2} ft/s | {best_outcome:?}"
             );
         }
 
@@ -138,16 +137,37 @@ fn run_evolution() {
 }
 
 fn print_winning_trajectory(result: &TrajectoryResult) {
-    println!("Final Speed: {:.2} ft/s", result.final_speed);
-    println!("Fuel Remaining: {:.1}", result.fuel_remaining);
+    println!("\n===============================================================");
+    println!("SUCCESSFUL FLIGHT DATA RECOVERED (REPLAYING SIMULATION):");
+    println!("===============================================================\n");
+    println!("SEC  FEET      SPEED     FUEL     BURN  PLOT OF DISTANCE\n");
 
-    let formatted_path: Vec<String> = result
-        .path
-        .iter()
-        .map(|(burn, alt)| format!("(Burn: {burn}, Alt: {alt:.0}ft)"))
-        .collect();
+    let mut replay_lander = Lander::new();
 
-    println!("Flight Path:\n  {}\n", formatted_path.join(" -> "));
+    for &burn in &result.path {
+        let star_col = 36 + (replay_lander.altitude / 15.0) as usize;
+
+        // Print the current state AND the burn we are about to apply
+        println!(
+            "{:<5}{:<10.2}{:<10.2}{:<9.1}{:<6}I{:>pad$}*",
+            replay_lander.elapsed_time,
+            replay_lander.altitude,
+            replay_lander.velocity,
+            replay_lander.fuel,
+            burn,
+            "",
+            pad = star_col.saturating_sub(36)
+        );
+
+        // Step the physics engine forward
+        replay_lander.step(burn);
+    }
+
+    println!("***** CONTACT *****");
+
+    // We can rely on the final stats calculated during the original run
+    println!("LANDING VELOCITY = {:.2} FEET/SEC.", result.final_speed);
+    println!("{:.1} UNITS OF FUEL REMAINING.", result.fuel_remaining);
 }
 
 fn main() {
