@@ -1,95 +1,155 @@
+use std::io;
+use std::io::Write;
+//use std::range::RangeInclusive;
+use std::ops::RangeInclusive;
 
+fn instructions() {
+    println!();
+    println!("YOU ARE LANDING ON THE MOON AND AND HAVE TAKEN OVER MANUAL");
+    println!("CONTROL 1000 FEET ABOVE A GOOD LANDING SPOT. YOU HAVE A DOWN-");
+    println!("WARD VELOCITY OF 50 FEET/SEC. 150 UNITS OF FUEL REMAIN.");
+    println!();
+    println!("HERE ARE THE RULES THAT GOVERN YOUR APOLLO SPACE-CRAFT:");
+    println!();
+    println!("(1) AFTER EACH SECOND THE HEIGHT, VELOCITY, AND REMAINING FUEL");
+    println!("    WILL BE REPORTED VIA DIGBY YOUR ON-BOARD COMPUTER.");
+    println!("(2) AFTER THE REPORT A '?' WILL APPEAR. ENTER THE NUMBER");
+    println!("    OF UNITS OF FUEL YOU WISH TO BURN DURING THE NEXT");
+    println!("    SECOND. EACH UNIT OF FUEL WILL SLOW YOUR DESCENT BY");
+    println!("    1 FOOT/SEC.");
+    println!("(3) THE MAXIMUM THRUST OF YOUR ENGINE IS 30 FEET/SEC/SEC");
+    println!("    OR 30 UNITS OF FUEL PER SECOND.");
+    println!("(4) WHEN YOU CONTACT THE LUNAR SURFACE. YOUR DESCENT ENGINE");
+    println!("    WILL AUTOMATICALLY SHUT DOWN AND YOU WILL BE GIVEN A");
+    println!("    REPORT OF YOUR LANDING SPEED AND REMAINING FUEL.");
+    println!("(5) IF YOU RUN OUT OF FUEL THE '?' WILL NO LONGER APPEAR");
+    println!("    BUT YOUR SECOND BY SECOND REPORT WILL CONTINUE UNTIL");
+    println!("    YOU CONTACT THE LUNAR SURFACE.");
+    println!();
+}
 
-// 20 PRINT TAB(15); "CREATIVE COMPUTING  MORRISTOWN, NEW JERSEY"
-// 30 PRINT: PRINT: PRINT
-// 70 PRINT "LUNAR LANDING SIMULATION"
-// 80 PRINT "----- ------- ----------": PRINT
-// 100 INPUT "DO YOU WANT INSTRUCTIONS (YES OR NO)"; A$
-// 110 IF A$ = "NO" THEN 390
-// 160 PRINT
-// 200 PRINT "YOU ARE LANDING ON THE MOON AND AND HAVE TAKEN OVER MANUAL"
-// 210 PRINT "CONTROL 1000 FEET ABOVE A GOOD LANDING SPOT. YOU HAVE A DOWN-"
-// 220 PRINT "WARD VELOCITY OF 50 FEET/SEC. 150 UNITS OF FUEL REMAIN."
-// 225 PRINT
-// 230 PRINT "HERE ARE THE RULES THAT GOVERN YOUR APOLLO SPACE-CRAFT:": PRINT
-// 240 PRINT "(1) AFTER EACH SECOND THE HEIGHT, VELOCITY, AND REMAINING FUEL"
-// 250 PRINT "    WILL BE REPORTED VIA DIGBY YOUR ON-BOARD COMPUTER."
-// 260 PRINT "(2) AFTER THE REPORT A '?' WILL APPEAR. ENTER THE NUMBER"
-// 270 PRINT "    OF UNITS OF FUEL YOU WISH TO BURN DURING THE NEXT"
-// 280 PRINT "    SECOND. EACH UNIT OF FUEL WILL SLOW YOUR DESCENT BY"
-// 290 PRINT "    1 FOOT/SEC."
-// 310 PRINT "(3) THE MAXIMUM THRUST OF YOUR ENGINE IS 30 FEET/SEC/SEC"
-// 320 PRINT "    OR 30 UNITS OF FUEL PER SECOND."
-// 330 PRINT "(4) WHEN YOU CONTACT THE LUNAR SURFACE. YOUR DESCENT ENGINE"
-// 340 PRINT "    WILL AUTOMATICALLY SHUT DOWN AND YOU WILL BE GIVEN A"
-// 350 PRINT "    REPORT OF YOUR LANDING SPEED AND REMAINING FUEL."
-// 360 PRINT "(5) IF YOU RUN OUT OF FUEL THE '?' WILL NO LONGER APPEAR"
-// 370 PRINT "    BUT YOUR SECOND BY SECOND REPORT WILL CONTINUE UNTIL"
-// 380 PRINT "    YOU CONTACT THE LUNAR SURFACE.": PRINT
-// 390 PRINT "BEGINNING LANDING PROCEDURE..........": PRINT
-// 400 PRINT "G O O D  L U C K ! ! !"
-// 420 PRINT: PRINT
-// 430 PRINT "SEC  FEET      SPEED     FUEL     PLOT OF DISTANCE"
-// 450 PRINT
-// 455 T = 0: H = 1000: V = 50: F = 150
-// 490 PRINT T; TAB(6); H; TAB(16); V; TAB(26); F; TAB(35); "I"; TAB(H / 15); "*"
-// 500 INPUT B
-// 510 IF B < 0 THEN 650
-// 520 IF B > 30 THEN B = 30
-// 530 IF B > F THEN B = F
-// 540 V1 = V - B + 5
-// 560 F = F - B
-// 570 H = H - .5 * (V + V1)
-// 580 IF H <= 0 THEN 670
-// 590 T = T + 1
-// 600 V = V1
-// 610 IF F > 0 THEN 490
-// 615 IF B = 0 THEN 640
-// 620 PRINT "**** OUT OF FUEL ****"
-// 640 PRINT T; TAB(4); H; TAB(12); V; TAB(20); F; TAB(29); "I"; TAB(H / 12 + 29); "*"
-// 650 B = 0
-// 660 GOTO 540
-// 670 PRINT "***** CONTACT *****"
-// 680 H = H + .5 * (V1 + V)
-// 690 IF B = 5 THEN 720
-// 700 D = (-V + SQR(V * V + H * (10 - 2 * B))) / (5 - B)
-// 710 GOTO 730
-// 720 D = H / V
-// 730 V1 = V + (5 - B) * D
-// 760 PRINT "TOUCHDOWN AT"; T + D; "SECONDS."
-// 770 PRINT "LANDING VELOCITY="; V1; "FEET/SEC."
-// 780 PRINT F; "UNITS OF FUEL REMAINING."
-// 790 IF V1 <> 0 THEN 810
-// 800 PRINT "CONGRATULATIONS! A PERFECT LANDING!!"
-// 805 PRINT "YOUR LICENSE WILL BE RENEWED.......LATER."
-// 810 IF ABS(V1) < 2 THEN 840
-// 820 PRINT "***** SORRY, BUT YOU BLEW IT!!!!"
-// 830 PRINT "APPROPRIATE CONDOLENCES WILL BE SENT TO YOUR NEXT OF KIN."
-// 840 PRINT: PRINT: PRINT
-// 850 INPUT "ANOTHER MISSION"; A$
-// 860 IF A$ = "YES" THEN 390
-// 870 PRINT: PRINT "CONTROL OUT.": PRINT
-// 999 END
+fn game_loop() {
+    println!("BEGINNING LANDING PROCEDURE..........");
+    println!();
+    println!("G O O D  L U C K ! ! !");
+    println!();
+    println!();
+    println!("SEC  FEET      SPEED     FUEL     PLOT OF DISTANCE");
+    println!();
 
-fn yes(&mut self, q: &str, y: &str, n: &str) -> bool {
-        loop {
-            self.wrt(&format!("{q}\n** "));
-            //let _ = io::stdout().flush();
-            if let Some(c) = self.get_input().chars().next() {
-                match c {
-                    'Y' | 'y' => {
-                        self.prn(y);
-                        return true;
-                    }
-                    'N' | 'n' => {
-                        self.prn(n);
-                        return false;
-                    }
-                    _ => self.wrt(" Please answer Yes or No.\n"),
+    let mut h: f64 = 1000.0;
+    let mut v: f64 = 50.0;
+    let mut f: f64 = 150.0;
+    let mut b;
+    let mut t: usize = 0;
+    let mut v1;
+    loop {
+        b = if f > 0.0 {
+            let star_col = 36 + (h / 15.0) as usize;
+            println!(
+                "{:<6}{:<10}{:<10}{:<9}I{:>pad$}*",
+                t,
+                h,
+                v,
+                f,
+                "",
+                pad = star_col.saturating_sub(36)
+            );
+            let ulimit = 30u8.min(f as u8);
+            get_int::<u8>("?", 0..=ulimit)
+        } else {
+            0u8
+        };
+
+        v1 = v - b as f64 + 5.0;
+        f -= b as f64;
+        h -= 0.5 * (v + v1);
+        if h <= 0.0 {
+            break; //contact 670
+        }
+        t += 1;
+        v = v1;
+        if f > 0.0 {
+            continue;
+        }
+        if b == 0 {
+            let star_col = 36 + (h / 12.0 + 29.0) as usize;
+            let pad = star_col.saturating_sub(30);
+            println!("{t:<4}{h:<8}{v:<8}{f:<9}I{:>pad$}*", "");
+        } else {
+            println!("**** OUT OF FUEL ****")
+        }
+    }
+    println!("***** CONTACT *****");
+    h += 0.5 * (v1 + v);
+    let d = if b == 5 {
+        h / v
+    } else {
+        (-v + (v * v + h * (10.0 - 2.0 * b as f64)).sqrt()) / (5.0 - b as f64)
+    };
+    println!("TOUCHDOWN AT {} SECONDS", t as f64 + d);
+    v1 = v + (5.0 - b as f64) * d;
+
+    println!("LANDING VELOCITY={v1} FEET/SEC.");
+    println!("{f} UNITS OF FUEL REMAINING.");
+    if v1 == 0.0 {
+        println!("CONGRATULATIONS! A PERFECT LANDING!!");
+        println!("YOUR LICENSE WILL BE RENEWED.......LATER.");
+    } else if v1.abs() >= 2.0 {
+        println!("***** SORRY, BUT YOU BLEW IT!!!!");
+        println!("APPROPRIATE CONDOLENCES WILL BE SENT TO YOUR NEXT OF KIN.");
+        println!("\n\n");
+    }
+}
+
+fn main() {
+    println!(
+        "{}{}",
+        " ".repeat(15),
+        "CREATIVE COMPUTING  MORRISTOWN, NEW JERSEY"
+    );
+    println!();
+    println!();
+    println!();
+    println!("LUNAR LANDING SIMULATION");
+    println!("----- ------- ----------\n");
+
+    if yes("DO YOU WANT INSTRUCTIONS (YES OR NO)?", "", "") {
+        instructions()
+    }
+    loop {
+        game_loop();
+        if !yes("ANOTHER MISSION?", "", "CONTROL OUT.\n") {
+            return;
+        }
+    }
+}
+
+fn get_input() -> String {
+    let mut s = String::new();
+    io::stdin().read_line(&mut s).ok();
+    String::from(s.trim())
+}
+
+fn yes(q: &str, y: &str, n: &str) -> bool {
+    loop {
+        println!("{q}\n** ");
+        let _ = io::stdout().flush();
+        if let Some(c) = get_input().chars().next() {
+            match c {
+                'Y' | 'y' => {
+                    println!("{y}");
+                    return true;
                 }
+                'N' | 'n' => {
+                    println!("{n}");
+                    return false;
+                }
+                _ => println!(" Please answer Yes or No.\n"),
             }
         }
     }
+}
 
 fn rl() -> String {
     let _ = io::stdout().flush();
@@ -116,4 +176,3 @@ where
         println!("  INVALID.");
     }
 }
-
