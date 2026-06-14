@@ -73,41 +73,45 @@ fn run_evolution() {
         })
         .collect();
 
+    struct ScoredGenome {
+        fitness: f64,
+        genome: Vec<u8>,
+        result: TrajectoryResult,
+    }
+
     for generation in 1..=GENERATIONS {
-        // 2. Evaluate Fitness
-        let mut scored_population: Vec<(f64, Vec<u8>, TrajectoryResult)> = population
+        let mut scored_population: Vec<ScoredGenome> = population
             .into_iter()
             .map(|genome| {
                 let result = simulate_genome(&genome);
                 let fitness = calculate_fitness(&result);
-                (fitness, genome, result)
+                ScoredGenome {
+                    fitness,
+                    genome,
+                    result,
+                }
             })
             .collect();
 
-        // Sort descending by fitness (highest score first)
-        scored_population.sort_by(|a, b| b.0.partial_cmp(&a.0).unwrap());
+        // Sort descending by fitness
+        scored_population.sort_by(|a, b| b.fitness.partial_cmp(&a.fitness).unwrap());
 
-        let best_fitness = scored_population[0].0;
-        let best_speed = scored_population[0].2.final_speed;
-        let best_outcome = &scored_population[0].2.outcome;
+        let best = &scored_population[0];
 
         if generation % 5 == 0 || generation == 1 {
-            let fuel = scored_population[0].2.fuel_remaining;
-            let dur = scored_population[0].2.flight_duration;
-
             println!(
-                "Gen {generation:02} | Best Fitness: {best_fitness:.1} | Impact Speed: {best_speed:.2} ft/s | Fuel left: {fuel:02} | Duration: {dur:2.1} | {best_outcome:?}"
+                "Gen {generation:02} | Best Fitness: {:.1} | Impact Speed: {:.2} ft/s | Fuel left: {:.1} | Duration: {:.1} | {:?}",
+                best.fitness,
+                best.result.final_speed,
+                best.result.fuel_remaining,
+                best.result.flight_duration,
+                best.result.outcome
             );
-            //println!("Gen {generation:02} | Best Fitness: {best_fitness:.1} | Impact Speed: {best_speed:.2} ft/s | {best_outcome:?}");
         }
 
-        // If we found a perfect landing, we can stop early!
+        // perfect landing - stop early
         //if *best_outcome == Outcome::Perfect {
-        //    println!("\nSUCCESS! Perfect landing sequence evolved at Generation {generation}!");
-        //
-        //    // Pass BOTH the raw genome and the final result to the printer
-        //    print_winning_trajectory(&scored_population[0].1, &scored_population[0].2);
-        //    return;
+        //  break
         //}
 
         // 3. Selection: Keep the top 10% (Elitism)
@@ -115,14 +119,14 @@ fn run_evolution() {
         let mut next_generation: Vec<Vec<u8>> = scored_population
             .iter()
             .take(elite_count)
-            .map(|(_, genome, _)| genome.clone())
+            .map(|scored| scored.genome.clone())
             .collect();
 
         // 4. Mutation: Fill the rest of the population by mutating the elites
         while next_generation.len() < POPULATION_SIZE {
             // Pick a random elite parent
             let parent_idx = rng.random_range(0..elite_count);
-            let mut child = scored_population[parent_idx].1.clone();
+            let mut child = scored_population[parent_idx].genome.clone();
 
             // Mutate: Randomly change ~15% of the sequence
             for gene in child.iter_mut() {
@@ -135,8 +139,6 @@ fn run_evolution() {
 
         population = next_generation;
     }
-
-    // ... end of the generation loop ...
 
     // Sort one final time in case the last mutation yielded the best result
     let mut final_population: Vec<(f64, Vec<u8>, TrajectoryResult)> = population
