@@ -1,19 +1,18 @@
-# Lunar Lander: Manual & Evolutionary Autopilot
+# Lunar Lander
 
-A Rust-based Lunar Lander game based on the 1970s classic text game [rocket](rocket.bas). Originally written by Jim Storer in 1969 and later popularized by David Ahl's *BASIC Computer Games* (1978) [1], this project rewrites the game with a decoupled physics engine to support AI training.
+A Rust implementation of the classic text-based Lunar Lander game, based on [rocket.bas](rocket.bas). The original program was written by Jim Storer in 1969 and later popularized by David Ahl's BASIC Computer Games (1978).
 
-It features both a playable interactive terminal game and an automated genetic algorithm. 
+This project preserves the original gameplay while introducing a decoupled physics engine and an evolutionary autopilot powered by a genetic algorithm.
 
-The mathematical theory for genetic algorithms did exist in the 1970s [2], but it was not part of the original Lunar Lander concept. It would have taken days to run on a maxed out Apple II with 48KB and caused out-of-memory error on more common 4KB systems.
-Today, however, a perfect landing sequence can be evolved in a fraction of a second on a modern Macbook.
+Although the mathematical foundations of genetic algorithms already existed in the 1970s, they were not part of the original Lunar Lander implementation. Running an evolutionary search on the small home computers of the era would have been impractical due to their limited memory and processing power. Today, a perfect landing sequence can be evolved in a fraction of a second on a modern MacBook.
 
 ## Features
 
-* **Classic Interactive Gameplay:** Take manual control of the Apollo descent engine 1000 feet above the lunar surface. Balance your fuel and velocity to avoid a catastrophic crash.
-* **Evolutionary Autopilot:** Watch a genetic algorithm train a population of flight plans. It scores trajectories based on impact velocity and fuel conservation, mutating the best survivors over generations until it discovers a perfect landing sequence.
+* **Classic Interactive Gameplay:** Balance fuel burn and velocity to avoid crashing into the surface.
+* **Evolutionary Autopilot:** Let the solver find a perfect landing sequence.
 * **Decoupled Physics Engine:** Core mechanics (gravity, thrust, fuel consumption, and fractional-second touchdown calculations) are isolated in a reusable library.
 
-## Prequisites
+## Prerequisites
 
 Get [Rust](https://rust-lang.org/tools/install/)
 
@@ -86,16 +85,18 @@ LANDING VELOCITY = 0.00 FEET/SEC.
 
 ## The Physics & Scoring
 
-The simulation runs in discrete 1-second chunks ($DT = 1.0$), with a gravity of $5.0 \text{ ft/s}^2$ and a maximum thrust of $30 \text{ ft/s}^2$.
+The simulation follows the original game's one-second control intervals: each burn command specifies the fuel consumed during the next one-second time step.
 
-Because the lander rarely hits the ground exactly on a whole second, the physics engine calculates the exact fractional second of touchdown to determine the true impact velocity.
+Because touchdown rarely occurs exactly at the end of a time step, the engine computes the precise fractional second of contact to determine the true impact velocity.
 
-Evolution Fitness Function:
+Evolutionary Fitness Function:
 * Perfect Landing (0 ft/s): Massive point reward, plus bonus points for remaining fuel.
 * Hard Landing (max 2 ft/s): High points, penalized slightly by the impact speed.
 * Crash (above 2 ft/s): Base survival points minus a heavy penalty for impact velocity.
 
+The genetic algorithm seeks safe landings while minimizing fuel consumption.
+
 ## References
 
-1. "Basic Computer Games - Microcomputer Edition", Edited by David E. Ahl, 1978 </br>
+1. "Basic Computer Games - Microcomputer Edition", Edited by David E. Ahl, 1978 
 2. "Adaptation in Natural and Artificial Systems", John Holland, 1975 
