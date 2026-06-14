@@ -1,10 +1,10 @@
 # Lunar Lander
 
-A Rust implementation of the classic text-based Lunar Lander game, based on [rocket.bas](rocket.bas). The original program was written by Jim Storer in 1969 and later popularized by David Ahl's BASIC Computer Games (1978).
+A Rust implementation of the classic text-based [Lunar Lander](rocket.bas) game. The original program was written by Jim Storer in 1969 and later popularized by David Ahl's BASIC Computer Games (1978).
 
 This project preserves the original gameplay while introducing a decoupled physics engine and an evolutionary autopilot powered by a genetic algorithm.
 
-Although the mathematical foundations of genetic algorithms already existed in the 1970s, they were not part of the original Lunar Lander implementation. Running an evolutionary search on the small home computers of the era would have been impractical due to their limited memory and processing power. Today, a perfect landing sequence can be evolved in a fraction of a second on a modern MacBook.
+Although the mathematical foundations of genetic algorithms already existed in the 1970s, they were not part of the original Lunar Lander implementation. Running an evolutionary search on the small home computers of the era would have been impractical due to their limited memory and processing power. Today, a perfect landing sequence can be evolved in a fraction of a second on a modern laptop.
 
 ## Features
 
