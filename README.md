@@ -1,8 +1,8 @@
 # Lunar Lander: Manual & Evolutionary Autopilot
 
-A Rust-based simulation of the classic 1970s Lunar Lander game, featuring both a playable interactive terminal game and an automated genetic algorithm that learns how to land the spacecraft perfectly.
+A Rust-based simulation of the classic text-based Lunar Lander game. Originally written by Jim Storer in 1969 and popularized by David Ahl's *BASIC Computer Games* (1978) [1], this project rewrites the classic concept with a decoupled physics engine to support AI training.
 
-This project is a tribute to David Ahl's original BASIC program published in *Creative Computing*, completely rewritten in Rust with a decoupled physics engine to support AI training.
+It features both a playable interactive terminal game and an automated genetic algorithm. While the mathematical theory for genetic algorithms existed in the 1970s [2], running this autopilot on a 1978 microcomputer with 4KB of RAM and a 1MHz CPU would have caused an instant out-of-memory error. Today, Rust evolves the perfect landing sequence in a fraction of a second.
 
 ## Features
 
@@ -94,3 +94,8 @@ Evolution Fitness Function:
 * Perfect Landing (≤ 0 ft/s): Massive point reward, plus bonus points for remaining fuel.
 * Hard Landing (< 2 ft/s): High points, penalized slightly by the impact speed.
 * Crash (≥ 2 ft/s): Base survival points minus a heavy penalty for impact velocity.
+
+## References
+
+1. "Basic Computer Games - Microcomputer Edition", Edited by David E. Ahl, 1978 </br>
+2. "Adaptation in Natural and Artificial Systems", John Holland, 1975 

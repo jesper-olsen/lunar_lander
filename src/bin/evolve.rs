@@ -203,8 +203,6 @@ fn main() {
     println!("LUNAR LANDING SIMULATION");
     println!("----- ------- ----------\n");
 
-    //if ask_yes_no("DO YOU WANT TO RUN AUTOMATED RANDOM SIMULATIONS FIRST?") {
-    //    //let count = get_int::<usize>("HOW MANY SIMULATIONS", 1..=1000000);
-    //}
+    //let count = get_int::<usize>("HOW MANY GENERATIONS", 1..=1000);
     run_evolution();
 }
