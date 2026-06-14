@@ -1,14 +1,11 @@
 use lunar_lander::{Lander, MAX_THRUST, Outcome};
 use rand::RngExt;
 
-// --- AUTOMATED SIMULATIONS ---
-
 struct TrajectoryResult {
-    /// Stores the exact sequence of burns applied during the flight
-    path: Vec<u8>,
     outcome: Outcome,
     final_speed: f64,
     fuel_remaining: f64,
+    flight_duration: f64,
 }
 
 const SEQUENCE_LENGTH: usize = 30; // Max expected seconds of flight
@@ -18,7 +15,6 @@ const GENERATIONS: usize = 50;
 // Evaluates a specific sequence of burns and returns the result
 fn simulate_genome(genome: &[u8]) -> TrajectoryResult {
     let mut lander = Lander::new();
-    let mut path = Vec::new();
     let mut time = 0;
 
     while !lander.is_landed() {
@@ -26,38 +22,39 @@ fn simulate_genome(genome: &[u8]) -> TrajectoryResult {
         let max_burn = MAX_THRUST.min(lander.fuel as u8);
         let actual_burn = intended_burn.min(max_burn);
 
-        // We only store the action we actually took
-        path.push(actual_burn);
-
         lander.step(actual_burn);
         time += 1;
     }
 
     let final_speed = lander.impact_velocity.expect("No impact velocity");
+    let total_time = lander.total_time.expect("No total time");
     let outcome = lander.get_outcome().unwrap();
 
     TrajectoryResult {
-        path,
         outcome,
         final_speed,
         fuel_remaining: lander.fuel,
+        flight_duration: total_time, // <-- Capture the exact time
     }
 }
 
-// The Fitness Function: Higher is better
+// Higher fitness score is better
 fn calculate_fitness(result: &TrajectoryResult) -> f64 {
     match result.outcome {
-        // Massive reward for perfection, plus points for leftover fuel
-        Outcome::Perfect => 10000.0 + result.fuel_remaining,
+        Outcome::Perfect => {
+            let base_score = 10000.0;
+            // Heavily reward leftover fuel (multiplier makes it a strong evolutionary pressure)
+            let fuel_bonus = result.fuel_remaining * 10.0;
+            // Penalize longer flight durations
+            let time_penalty = result.flight_duration;
 
-        // Base points for surviving, but penalized for how close to 2.0 ft/s it was
+            base_score + fuel_bonus - time_penalty
+        }
+
         Outcome::Hard => 5000.0 - result.final_speed,
 
-        // Crashes are penalized heavily based on the impact speed.
-        // A softer crash scores higher than a meteor strike.
         Outcome::Crashed => {
             let penalty = result.final_speed.abs();
-            // Using max to prevent negative fitness scores
             1000.0 - penalty.min(1000.0)
         }
     }
@@ -95,17 +92,23 @@ fn run_evolution() {
         let best_outcome = &scored_population[0].2.outcome;
 
         if generation % 5 == 0 || generation == 1 {
+            let fuel = scored_population[0].2.fuel_remaining;
+            let dur = scored_population[0].2.flight_duration;
+
             println!(
-                "Gen {generation:02} | Best Fitness: {best_fitness:.1} | Impact Speed: {best_speed:.2} ft/s | {best_outcome:?}"
+                "Gen {generation:02} | Best Fitness: {best_fitness:.1} | Impact Speed: {best_speed:.2} ft/s | Fuel left: {fuel:02} | Duration: {dur:2.1} | {best_outcome:?}"
             );
+            //println!("Gen {generation:02} | Best Fitness: {best_fitness:.1} | Impact Speed: {best_speed:.2} ft/s | {best_outcome:?}");
         }
 
         // If we found a perfect landing, we can stop early!
-        if *best_outcome == Outcome::Perfect {
-            println!("\nSUCCESS! Perfect landing sequence evolved at Generation {generation}!");
-            print_winning_trajectory(&scored_population[0].2);
-            return;
-        }
+        //if *best_outcome == Outcome::Perfect {
+        //    println!("\nSUCCESS! Perfect landing sequence evolved at Generation {generation}!");
+        //
+        //    // Pass BOTH the raw genome and the final result to the printer
+        //    print_winning_trajectory(&scored_population[0].1, &scored_population[0].2);
+        //    return;
+        //}
 
         // 3. Selection: Keep the top 10% (Elitism)
         let elite_count = POPULATION_SIZE / 10;
@@ -133,39 +136,62 @@ fn run_evolution() {
         population = next_generation;
     }
 
-    println!("\nEvolution finished, but no perfect landing was found.");
+    // ... end of the generation loop ...
+
+    // Sort one final time in case the last mutation yielded the best result
+    let mut final_population: Vec<(f64, Vec<u8>, TrajectoryResult)> = population
+        .into_iter()
+        .map(|genome| {
+            let result = simulate_genome(&genome);
+            let fitness = calculate_fitness(&result);
+            (fitness, genome, result)
+        })
+        .collect();
+
+    final_population.sort_by(|a, b| b.0.partial_cmp(&a.0).unwrap());
+
+    let best_result = &final_population[0].2;
+    let best_genome = &final_population[0].1;
+
+    if best_result.outcome == Outcome::Perfect {
+        println!("\nEVOLUTION COMPLETE: Optimal flight plan found.");
+        print_winning_trajectory(best_genome, best_result);
+    } else {
+        println!("\nEvolution finished, but no perfect landing was found.");
+    }
 }
 
-fn print_winning_trajectory(result: &TrajectoryResult) {
+fn print_winning_trajectory(genome: &[u8], result: &TrajectoryResult) {
     println!("\n===============================================================");
     println!("SUCCESSFUL FLIGHT DATA RECOVERED (REPLAYING SIMULATION):");
     println!("===============================================================\n");
     println!("SEC  FEET      SPEED     FUEL     BURN  PLOT OF DISTANCE\n");
 
     let mut replay_lander = Lander::new();
+    let mut time = 0;
 
-    for &burn in &result.path {
+    while !replay_lander.is_landed() {
         let star_col = 36 + (replay_lander.altitude / 15.0) as usize;
 
-        // Print the current state AND the burn we are about to apply
+        let intended_burn = *genome.get(time).unwrap_or(&0);
+        let max_burn = MAX_THRUST.min(replay_lander.fuel as u8);
+        let actual_burn = intended_burn.min(max_burn);
+
         println!(
-            "{:<5}{:<10.2}{:<10.2}{:<9.1}{:<6}I{:>pad$}*",
+            "{:<5}{:<10.2}{:<10.2}{:<9.1}{actual_burn:<6}I{:>pad$}*",
             replay_lander.elapsed_time,
             replay_lander.altitude,
             replay_lander.velocity,
             replay_lander.fuel,
-            burn,
             "",
             pad = star_col.saturating_sub(36)
         );
 
-        // Step the physics engine forward
-        replay_lander.step(burn);
+        replay_lander.step(actual_burn);
+        time += 1;
     }
 
     println!("***** CONTACT *****");
-
-    // We can rely on the final stats calculated during the original run
     println!("LANDING VELOCITY = {:.2} FEET/SEC.", result.final_speed);
     println!("{:.1} UNITS OF FUEL REMAINING.", result.fuel_remaining);
 }
