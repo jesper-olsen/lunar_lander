@@ -4,7 +4,7 @@ A Rust-based Lunar Lander game based on the 1970s classic text game [rocket](roc
 
 It features both a playable interactive terminal game and an automated genetic algorithm. 
 
-While the mathematical theory for genetic algorithms did exist in the 1970s [2], it was not part of the original Lunar Lander concept. It would have taken days to run on a maxed out Apple II with 48KB and caused out-of-memory error on smaller 4KB systems.
+The mathematical theory for genetic algorithms did exist in the 1970s [2], but it was not part of the original Lunar Lander concept. It would have taken days to run on a maxed out Apple II with 48KB and caused out-of-memory error on more common 4KB systems.
 Today, however, a perfect landing sequence can be evolved in a fraction of a second on a modern Macbook.
 
 ## Features
