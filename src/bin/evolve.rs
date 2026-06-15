@@ -46,14 +46,15 @@ impl Genome {
         Genome(self.0.clone())
     }
 
-    fn mutate(&mut self, rng: &mut impl Rng) {
-        for gene in self.0.iter_mut() {
+    fn mutate(mut self, rng: &mut impl Rng) -> Self {
+        for gene in &mut self.0.iter_mut() {
             // let prob = 0.15;
             let prob = 2.0 / SEQUENCE_LENGTH as f64;
             if rng.random_bool(prob) {
                 *gene = rng.random_range(0..=MAX_THRUST)
             }
         }
+        self
     }
 
     fn crossover(&self, other: &Genome, rng: &mut impl Rng) -> Self {
@@ -151,10 +152,9 @@ fn run_evolution() {
             // Pick a random elite parent
             let parent_idx1 = rng.random_range(0..elite_count);
             let parent_idx2 = rng.random_range(0..elite_count);
-            let mut child = scored_population[parent_idx1]
-                .genome
-                .crossover(&scored_population[parent_idx2].genome, &mut rng);
-            child.mutate(&mut rng);
+            let genome1 = &scored_population[parent_idx1].genome;
+            let genome2 = &scored_population[parent_idx2].genome;
+            let child = genome1.crossover(genome2, &mut rng).mutate(&mut rng);
             next_generation.push(child);
         }
 
