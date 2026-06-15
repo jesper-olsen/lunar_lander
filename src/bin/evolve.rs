@@ -1,5 +1,5 @@
 use lunar_lander::{Lander, MAX_THRUST, Outcome};
-use rand::RngExt;
+use rand::{Rng, RngExt};
 
 struct TrajectoryResult {
     outcome: Outcome,
@@ -39,8 +39,23 @@ const POPULATION_SIZE: usize = 1000;
 const GENERATIONS: usize = 50;
 
 impl Genome {
+    fn random(rng: &mut impl Rng) -> Self {
+        Genome(std::array::from_fn(|_| rng.random_range(0..MAX_THRUST)))
+    }
+
     fn clone(&self) -> Self {
         Genome(self.0.clone())
+    }
+
+    fn mutate(&self, rng: &mut impl Rng) -> Self {
+        let genes = std::array::from_fn(|i| {
+            if rng.random_bool(0.15) {
+                rng.random_range(0..=MAX_THRUST)
+            } else {
+                self.0[i]
+            }
+        });
+        Genome(genes)
     }
 
     // Evaluates a specific sequence of burns and returns the result
@@ -76,7 +91,7 @@ fn run_evolution() {
 
     // Initialize random population
     let mut population: Vec<Genome> = (0..POPULATION_SIZE)
-        .map(|_| Genome(std::array::from_fn(|_| rng.random_range(0..MAX_THRUST))))
+        .map(|_| Genome::random(&mut rng))
         .collect();
 
     struct ScoredGenome {
@@ -131,14 +146,7 @@ fn run_evolution() {
         while next_generation.len() < POPULATION_SIZE {
             // Pick a random elite parent
             let parent_idx = rng.random_range(0..elite_count);
-            let mut child = scored_population[parent_idx].genome.clone();
-
-            // Mutate: Randomly change ~15% of the sequence
-            for gene in child.0.iter_mut() {
-                if rng.random_bool(0.15) {
-                    *gene = rng.random_range(0..=MAX_THRUST);
-                }
-            }
+            let child = scored_population[parent_idx].genome.mutate(&mut rng);
             next_generation.push(child);
         }
 
