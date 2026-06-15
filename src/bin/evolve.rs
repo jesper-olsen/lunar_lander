@@ -114,7 +114,7 @@ fn run_evolution() {
         //  break
         //}
 
-        // 3. Selection: Keep the top 10% (Elitism)
+        // Selection: Keep the top 10% (Elitism)
         let elite_count = POPULATION_SIZE / 10;
         let mut next_generation: Vec<Vec<u8>> = scored_population
             .iter()
@@ -122,7 +122,7 @@ fn run_evolution() {
             .map(|scored| scored.genome.clone())
             .collect();
 
-        // 4. Mutation: Fill the rest of the population by mutating the elites
+        // Mutation: Fill the rest of the population by mutating the elites
         while next_generation.len() < POPULATION_SIZE {
             // Pick a random elite parent
             let parent_idx = rng.random_range(0..elite_count);
@@ -141,19 +141,22 @@ fn run_evolution() {
     }
 
     // Sort one final time in case the last mutation yielded the best result
-    let mut final_population: Vec<(f64, Vec<u8>, TrajectoryResult)> = population
+    let mut final_population: Vec<ScoredGenome> = population
         .into_iter()
         .map(|genome| {
             let result = simulate_genome(&genome);
             let fitness = calculate_fitness(&result);
-            (fitness, genome, result)
+            ScoredGenome {
+                fitness,
+                genome,
+                result,
+            }
         })
         .collect();
+    final_population.sort_by(|a, b| b.fitness.partial_cmp(&a.fitness).unwrap());
 
-    final_population.sort_by(|a, b| b.0.partial_cmp(&a.0).unwrap());
-
-    let best_result = &final_population[0].2;
-    let best_genome = &final_population[0].1;
+    let best_result = &final_population[0].result;
+    let best_genome = &final_population[0].genome;
 
     if best_result.outcome == Outcome::Perfect {
         println!("\nEVOLUTION COMPLETE: Optimal flight plan found.");
