@@ -34,7 +34,6 @@ impl TrajectoryResult {
 
 const SEQUENCE_LENGTH: usize = 30; // Max expected seconds of flight
 struct Genome([u8; SEQUENCE_LENGTH]);
-//type Genome = [u8; SEQUENCE_LENGTH];
 const POPULATION_SIZE: usize = 1000;
 const GENERATIONS: usize = 50;
 
@@ -47,14 +46,19 @@ impl Genome {
         Genome(self.0.clone())
     }
 
-    fn mutate(&self, rng: &mut impl Rng) -> Self {
-        let genes = std::array::from_fn(|i| {
-            if rng.random_bool(0.15) {
-                rng.random_range(0..=MAX_THRUST)
-            } else {
-                self.0[i]
+    fn mutate(&mut self, rng: &mut impl Rng) {
+        for gene in self.0.iter_mut() {
+            // let prob = 0.15;
+            let prob = 2.0 / SEQUENCE_LENGTH as f64;
+            if rng.random_bool(prob) {
+                *gene = rng.random_range(0..=MAX_THRUST)
             }
-        });
+        }
+    }
+
+    fn crossover(&self, other: &Genome, rng: &mut impl Rng) -> Self {
+        let point = rng.random_range(1..SEQUENCE_LENGTH);
+        let genes = std::array::from_fn(|i| if i < point { self.0[i] } else { other.0[i] });
         Genome(genes)
     }
 
@@ -145,8 +149,12 @@ fn run_evolution() {
         // Mutation: Fill the rest of the population by mutating the elites
         while next_generation.len() < POPULATION_SIZE {
             // Pick a random elite parent
-            let parent_idx = rng.random_range(0..elite_count);
-            let child = scored_population[parent_idx].genome.mutate(&mut rng);
+            let parent_idx1 = rng.random_range(0..elite_count);
+            let parent_idx2 = rng.random_range(0..elite_count);
+            let mut child = scored_population[parent_idx1]
+                .genome
+                .crossover(&scored_population[parent_idx2].genome, &mut rng);
+            child.mutate(&mut rng);
             next_generation.push(child);
         }
 
