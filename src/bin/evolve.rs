@@ -9,11 +9,12 @@ struct TrajectoryResult {
 }
 
 const SEQUENCE_LENGTH: usize = 30; // Max expected seconds of flight
+type Genome = [u8; SEQUENCE_LENGTH];
 const POPULATION_SIZE: usize = 1000;
 const GENERATIONS: usize = 50;
 
 // Evaluates a specific sequence of burns and returns the result
-fn simulate_genome(genome: &[u8]) -> TrajectoryResult {
+fn simulate_genome(genome: &Genome) -> TrajectoryResult {
     let mut lander = Lander::new();
     let mut time = 0;
 
@@ -64,18 +65,14 @@ fn run_evolution() {
     println!("\n--- INITIATING EVOLUTIONARY AUTOPILOT ---");
     let mut rng = rand::rng();
 
-    // 1. Initialize random population
-    let mut population: Vec<Vec<u8>> = (0..POPULATION_SIZE)
-        .map(|_| {
-            (0..SEQUENCE_LENGTH)
-                .map(|_| rng.random_range(0..=MAX_THRUST))
-                .collect()
-        })
+    // Initialize random population
+    let mut population: Vec<Genome> = (0..POPULATION_SIZE)
+        .map(|_| std::array::from_fn(|_| rng.random_range(0..MAX_THRUST)))
         .collect();
 
     struct ScoredGenome {
         fitness: f64,
-        genome: Vec<u8>,
+        genome: Genome,
         result: TrajectoryResult,
     }
 
@@ -116,7 +113,7 @@ fn run_evolution() {
 
         // Selection: Keep the top 10% (Elitism)
         let elite_count = POPULATION_SIZE / 10;
-        let mut next_generation: Vec<Vec<u8>> = scored_population
+        let mut next_generation: Vec<Genome> = scored_population
             .iter()
             .take(elite_count)
             .map(|scored| scored.genome.clone())
