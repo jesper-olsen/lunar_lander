@@ -8,55 +8,64 @@ struct TrajectoryResult {
     flight_duration: f64,
 }
 
-const SEQUENCE_LENGTH: usize = 30; // Max expected seconds of flight
-type Genome = [u8; SEQUENCE_LENGTH];
-const POPULATION_SIZE: usize = 1000;
-const GENERATIONS: usize = 50;
+impl TrajectoryResult {
+    // Higher fitness score is better
+    fn fitness(&self) -> f64 {
+        match self.outcome {
+            Outcome::Perfect => {
+                let base_score = 10000.0;
+                // Heavily reward leftover fuel (multiplier makes it a strong evolutionary pressure)
+                let fuel_bonus = self.fuel_remaining * 10.0;
+                // Penalize longer flight durations
+                let time_penalty = self.flight_duration;
 
-// Evaluates a specific sequence of burns and returns the result
-fn simulate_genome(genome: &Genome) -> TrajectoryResult {
-    let mut lander = Lander::new();
-    let mut time = 0;
+                base_score + fuel_bonus - time_penalty
+            }
 
-    while !lander.is_landed() {
-        let intended_burn = *genome.get(time).unwrap_or(&0);
-        let max_burn = MAX_THRUST.min(lander.fuel as u8);
-        let actual_burn = intended_burn.min(max_burn);
+            Outcome::Hard => 5000.0 - self.final_speed,
 
-        lander.step(actual_burn);
-        time += 1;
-    }
-
-    let final_speed = lander.impact_velocity.expect("No impact velocity");
-    let total_time = lander.total_time.expect("No total time");
-    let outcome = lander.get_outcome().unwrap();
-
-    TrajectoryResult {
-        outcome,
-        final_speed,
-        fuel_remaining: lander.fuel,
-        flight_duration: total_time, // <-- Capture the exact time
+            Outcome::Crashed => {
+                let penalty = self.final_speed.abs();
+                1000.0 - penalty.min(1000.0)
+            }
+        }
     }
 }
 
-// Higher fitness score is better
-fn calculate_fitness(result: &TrajectoryResult) -> f64 {
-    match result.outcome {
-        Outcome::Perfect => {
-            let base_score = 10000.0;
-            // Heavily reward leftover fuel (multiplier makes it a strong evolutionary pressure)
-            let fuel_bonus = result.fuel_remaining * 10.0;
-            // Penalize longer flight durations
-            let time_penalty = result.flight_duration;
+const SEQUENCE_LENGTH: usize = 30; // Max expected seconds of flight
+struct Genome([u8; SEQUENCE_LENGTH]);
+//type Genome = [u8; SEQUENCE_LENGTH];
+const POPULATION_SIZE: usize = 1000;
+const GENERATIONS: usize = 50;
 
-            base_score + fuel_bonus - time_penalty
+impl Genome {
+    fn clone(&self) -> Self {
+        Genome(self.0.clone())
+    }
+
+    // Evaluates a specific sequence of burns and returns the result
+    fn simulate(&self) -> TrajectoryResult {
+        let mut lander = Lander::new();
+        let mut time = 0;
+
+        while !lander.is_landed() {
+            let intended_burn = *self.0.get(time).unwrap_or(&0);
+            let max_burn = MAX_THRUST.min(lander.fuel as u8);
+            let actual_burn = intended_burn.min(max_burn);
+
+            lander.step(actual_burn);
+            time += 1;
         }
 
-        Outcome::Hard => 5000.0 - result.final_speed,
+        let final_speed = lander.impact_velocity.expect("No impact velocity");
+        let total_time = lander.total_time.expect("No total time");
+        let outcome = lander.get_outcome().unwrap();
 
-        Outcome::Crashed => {
-            let penalty = result.final_speed.abs();
-            1000.0 - penalty.min(1000.0)
+        TrajectoryResult {
+            outcome,
+            final_speed,
+            fuel_remaining: lander.fuel,
+            flight_duration: total_time, // <-- Capture the exact time
         }
     }
 }
@@ -67,7 +76,7 @@ fn run_evolution() {
 
     // Initialize random population
     let mut population: Vec<Genome> = (0..POPULATION_SIZE)
-        .map(|_| std::array::from_fn(|_| rng.random_range(0..MAX_THRUST)))
+        .map(|_| Genome(std::array::from_fn(|_| rng.random_range(0..MAX_THRUST))))
         .collect();
 
     struct ScoredGenome {
@@ -80,10 +89,9 @@ fn run_evolution() {
         let mut scored_population: Vec<ScoredGenome> = population
             .into_iter()
             .map(|genome| {
-                let result = simulate_genome(&genome);
-                let fitness = calculate_fitness(&result);
+                let result = genome.simulate();
                 ScoredGenome {
-                    fitness,
+                    fitness: result.fitness(),
                     genome,
                     result,
                 }
@@ -126,7 +134,7 @@ fn run_evolution() {
             let mut child = scored_population[parent_idx].genome.clone();
 
             // Mutate: Randomly change ~15% of the sequence
-            for gene in child.iter_mut() {
+            for gene in child.0.iter_mut() {
                 if rng.random_bool(0.15) {
                     *gene = rng.random_range(0..=MAX_THRUST);
                 }
@@ -141,10 +149,9 @@ fn run_evolution() {
     let mut final_population: Vec<ScoredGenome> = population
         .into_iter()
         .map(|genome| {
-            let result = simulate_genome(&genome);
-            let fitness = calculate_fitness(&result);
+            let result = genome.simulate();
             ScoredGenome {
-                fitness,
+                fitness: result.fitness(),
                 genome,
                 result,
             }
@@ -163,7 +170,7 @@ fn run_evolution() {
     }
 }
 
-fn print_winning_trajectory(genome: &[u8], result: &TrajectoryResult) {
+fn print_winning_trajectory(genome: &Genome, result: &TrajectoryResult) {
     println!("\n===============================================================");
     println!("SUCCESSFUL FLIGHT DATA RECOVERED (REPLAYING SIMULATION):");
     println!("===============================================================\n");
@@ -175,7 +182,7 @@ fn print_winning_trajectory(genome: &[u8], result: &TrajectoryResult) {
     while !replay_lander.is_landed() {
         let star_col = 36 + (replay_lander.altitude / 15.0) as usize;
 
-        let intended_burn = *genome.get(time).unwrap_or(&0);
+        let intended_burn = *genome.0.get(time).unwrap_or(&0);
         let max_burn = MAX_THRUST.min(replay_lander.fuel as u8);
         let actual_burn = intended_burn.min(max_burn);
 
